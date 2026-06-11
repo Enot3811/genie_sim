@@ -1,11 +1,16 @@
 # Real2Sim Environment Asset Flow Dockerfile
-FROM nvidia/cuda:11.8.0-cudnn8-devel-ubuntu22.04 as system-builder
+
+ARG CUDA_IMAGE="11.8.0-cudnn8"
+
+FROM nvidia/cuda:${CUDA_IMAGE}-devel-ubuntu22.04 as system-builder
+
+ARG TORCH_ARCH="8.9"
 
 ENV ACCEPT_EULA=Y
 ENV PRIVACY_CONSENT=Y
 ENV DEBIAN_FRONTEND=noninteractive
 ENV CONDA_ALWAYS_YES=true
-ENV TORCH_CUDA_ARCH_LIST="8.9"
+ENV TORCH_CUDA_ARCH_LIST=${TORCH_ARCH}
 ENV MAX_JOBS=4
 ENV QT_QPA_PLATFORM=offscreen
 
@@ -98,6 +103,9 @@ RUN conda config --set auto_activate_base false && \
 RUN conda --version && python --version
 
 FROM system-builder as pgsr-builder
+
+ARG PT_CU_VER="cu118"
+
 # Install PGSR enviroments
 RUN cd ./third_party && git clone https://github.com/zju3dv/PGSR.git && cd PGSR && \
     git checkout de24f1a38b350387e8d8fe381b2cd70c1ae946e7 && \
@@ -105,7 +113,7 @@ RUN cd ./third_party && git clone https://github.com/zju3dv/PGSR.git && cd PGSR 
     git submodule update --init --recursive && \
     conda init && \
     conda create -n pgsr python=3.8 -y &&  rm -rf /root/.cache/pip
-RUN conda run -n pgsr pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118 && \
+RUN conda run -n pgsr pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/${PT_CU_VER} && \
     rm -rf /root/.cache/pip
 RUN cd ./third_party/PGSR && conda run -n pgsr pip install -r requirements.txt && rm -rf /root/.cache/pip
 RUN cd ./third_party/PGSR &&  conda run -n pgsr pip install pycolmap==3.11.1 && \
@@ -122,7 +130,7 @@ RUN conda run -n difix pip3 install matplotlib scikit-learn plyfile rich && rm -
 
 FROM difix-builder as gsplat-builder
 # base install gsplat
-RUN conda run -n base python3 -m pip install plyfile torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118 \
+RUN conda run -n base python3 -m pip install plyfile torch torchvision torchaudio --index-url https://download.pytorch.org/whl/${PT_CU_VER} \
     && rm -rf /root/.cache/pip
 RUN cd ./third_party/gsplat && conda run -n base pip3 uninstall pycolmap && \
     conda run -n base pip3 install -r examples/requirements.txt && \

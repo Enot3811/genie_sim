@@ -379,7 +379,7 @@ class CuroboMotion:
             world_model=self.world_cfg,
             tensor_args=tensor_args,
             collision_checker_type=CollisionCheckerType.MESH,
-            use_cuda_graph=True,
+            use_cuda_graph=False,
             num_trajopt_seeds=4,
             num_graph_seeds=4,
             num_ik_seeds=32,
@@ -400,7 +400,7 @@ class CuroboMotion:
         self.motion_gen = MotionGen(motion_gen_config)
         if CuroboMotion.world_coll_checker is None:
             CuroboMotion.world_coll_checker = self.motion_gen.world_coll_checker
-        self.motion_gen.warmup(parallel_finetune=True, batch=CUROBO_BATCH_SIZE)
+        # self.motion_gen.warmup(parallel_finetune=True, batch=CUROBO_BATCH_SIZE)
         self.world_model = self.motion_gen.world_collision
         self.plan_config = MotionGenPlanConfig(
             enable_graph=True,
@@ -408,8 +408,8 @@ class CuroboMotion:
             need_graph_success=True,
             enable_graph_attempt=5,
             max_attempts=40,
-            enable_finetune_trajopt=True,
-            parallel_finetune=True,
+            enable_finetune_trajopt=False,
+            parallel_finetune=False,
             time_dilation_factor=1.0,
             ik_fail_return=5,
             success_ratio=0.5,
