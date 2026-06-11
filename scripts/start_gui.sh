@@ -15,10 +15,20 @@ mkdir -p ~/docker/isaac-sim/pkg
 mkdir -p $CURRENT_DIR/source/geniesim/benchmark/saved_task
 sudo chown -R 1234:1234 ~/docker/isaac-sim
 
+if [ -f "$CURRENT_DIR/.env" ]; then
+    source "$CURRENT_DIR/.env"
+fi
+
+if [ -z "$SIM_ASSETS" ]; then
+    echo "Error: SIM_ASSETS is not set. Please define it in the .env file."
+    exit 1
+fi
+
 xhost +local:
 docker run -itd --name genie_sim_benchmark \
     --init \
     --user 1234:1234 \
+    --env-file $CURRENT_DIR/.env \
     --entrypoint ./scripts/entrypoint.sh \
     --gpus all \
     --network=host \
@@ -33,6 +43,7 @@ docker run -itd --name genie_sim_benchmark \
     -v ~/docker/isaac-sim/data:/isaac-sim/.local/share/ov/data:rw \
     -v ~/docker/isaac-sim/pkg:/isaac-sim/.local/share/ov/pkg:rw \
     -v /dev/input:/dev/input:rw \
+    -v "$SIM_ASSETS":/geniesim/main/source/geniesim/assets:rw \
     -v $CURRENT_DIR:/geniesim/main:rw \
     -w /geniesim/main \
     registry.agibot.com/genie-sim/open_source:latest \

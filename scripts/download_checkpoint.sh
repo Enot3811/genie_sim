@@ -16,13 +16,14 @@ VALID_CHECKPOINTS=(
 )
 
 show_help() {
-    echo "Usage: $0 [CHECKPOINT_NAME] [LOCAL_DIR]"
+    echo "Usage: $0 [CHECKPOINT_NAME] [LOCAL_DIR] [--inference-only]"
     echo ""
     echo "Download checkpoint from ModelScope dataset: $DATASET_ID"
     echo ""
     echo "Arguments:"
     echo "  CHECKPOINT_NAME   Name of the checkpoint to download (default: select_color)"
     echo "  LOCAL_DIR         Base directory for checkpoints (default: ./openpi/checkpoints/)"
+    echo "  --inference-only  Skip downloading train_state to save ~30GB of space (recommended for testing)"
     echo "  -h, --help        Show this help"
     echo ""
     echo "Available checkpoints:"
@@ -32,18 +33,22 @@ show_help() {
     echo ""
     echo "Examples:"
     echo "  $0                                  # Download select_color to ./openpi/checkpoints/select_color/"
-    echo "  $0 grasp_targets                    # Download grasp_targets to ./openpi/checkpoints/grasp_targets/"
+    echo "  $0 grasp_targets --inference-only   # Download only params for grasp_targets"
     echo "  $0 sort_fruit /path/to/save         # Download sort_fruit to /path/to/save/sort_fruit/"
 }
 
 CHECKPOINT_NAME=""
 LOCAL_DIR=""
+INFERENCE_ONLY=false
 
 for arg in "$@"; do
     case $arg in
         -h|--help)
             show_help
             exit 0
+            ;;
+        --inference-only)
+            INFERENCE_ONLY=true
             ;;
         *)
             if [ -z "$CHECKPOINT_NAME" ]; then
@@ -113,7 +118,17 @@ trap "rm -rf $TEMP_DIR" EXIT
 
 echo "Remote path: $REMOTE_PATH"
 echo "Local target: $FINAL_DIR"
-modelscope download --dataset "$DATASET_ID" --include "$REMOTE_PATH/**" --local_dir "$TEMP_DIR"
+
+if [ "$INFERENCE_ONLY" = true ]; then
+    echo "Inference-only mode enabled. Skipping train_state..."
+    modelscope download --dataset "$DATASET_ID" --include "$REMOTE_PATH/params/**" --local_dir "$TEMP_DIR"
+    modelscope download --dataset "$DATASET_ID" --include "$REMOTE_PATH/_CHECKPOINT_METADATA" --local_dir "$TEMP_DIR"
+    modelscope download --dataset "$DATASET_ID" --include "$REMOTE_PATH/norm_stats.json" --local_dir "$TEMP_DIR"
+    modelscope download --dataset "$DATASET_ID" --include "$REMOTE_PATH/assets/**" --local_dir "$TEMP_DIR"
+else
+    echo "Downloading full checkpoint (including train_state)..."
+    modelscope download --dataset "$DATASET_ID" --include "$REMOTE_PATH/**" --local_dir "$TEMP_DIR"
+fi
 
 if [ $? -eq 0 ]; then
     cp -a "$TEMP_DIR/$REMOTE_PATH"/. "$FINAL_DIR"/

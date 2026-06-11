@@ -59,16 +59,23 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
+# Get current directory
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+CURRENT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+
+# Load .env file from the root of the repository
+# $CURRENT_DIR is source/data_collection, so we need to go two levels up
+REPO_ROOT="$(cd "$CURRENT_DIR/../.." && pwd)"
+if [ -f "$REPO_ROOT/.env" ]; then
+    source "$REPO_ROOT/.env"
+fi
+
 # Check if SIM_ASSETS is set
 if [ -z "$SIM_ASSETS" ]; then
     echo "Error: SIM_ASSETS environment variable is not set"
     echo "Please set it, e.g., export SIM_ASSETS=~/assets"
     exit 1
 fi
-
-# Get current directory
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-CURRENT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 sudo setfacl -m u:1234:rwX $CURRENT_DIR/scripts
 sudo mkdir -p $CURRENT_DIR/saved_task && sudo setfacl -m u:1234:rwX -R $CURRENT_DIR/saved_task
@@ -195,6 +202,7 @@ CONTAINER_ID=$(docker run -d --name $CONTAINER_NAME \
     -e "OMNI_PASS=geniesim" \
     -e "LOG_DIR=/geniesim/main/data_collection/logs/${TASK_NAME}" \
     -e "SIM_ASSETS=/geniesim/main/source/geniesim/assets" \
+    -e "CUROBO_BATCH_SIZE=${CUROBO_BATCH_SIZE:-20}" \
     -v ~/docker/isaac-sim/cache/main:/isaac-sim/.cache:rw \
     -v ~/docker/isaac-sim/cache/computecache:/isaac-sim/.nv/ComputeCache:rw \
     -v ~/docker/isaac-sim/logs:/isaac-sim/.nvidia-omniverse/logs:rw \

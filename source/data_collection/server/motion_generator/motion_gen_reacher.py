@@ -6,6 +6,7 @@ import copy
 import re
 import time
 from typing import Optional
+import os
 
 import carb
 import numpy as np
@@ -43,7 +44,7 @@ except ImportError:
     pass
 
 
-CUROBO_BATCH_SIZE = 20
+CUROBO_BATCH_SIZE = int(os.environ.get("CUROBO_BATCH_SIZE", 20))
 MAX_MESH_FACES = 1000  # Maximum face count limit
 
 

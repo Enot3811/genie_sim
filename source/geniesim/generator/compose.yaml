@@ -11,29 +11,22 @@ services:
     volumes:
       - ..:/geniesim
       - ./server_chromadb_vl:/tmp/chromadb_cache_vl:rw
-    command:
-      [
-        "mcpo",
-        "--config",
-        "/geniesim/generator/server/mcp_config.json",
-        "--port",
-        "8765",
-      ]
+    command: [ "mcpo", "--config", "/geniesim/generator/server/mcp_config.json", "--port", "8765" ]
     working_dir: /geniesim
     environment:
       - EMBEDDING_MODE=vl
       - VL_EMBEDDING_MODEL=Qwen3-VL-Embedding-2B
       - PERMANENT_MODEL_IN_GPU=False
       - USE_RERANKER=False
-      - BATCH_SIZE=10
+      - BATCH_SIZE=${VL_BATCH_SIZE:-10}
     restart: unless-stopped
     deploy:
       resources:
-          reservations:
-              devices:
-                  - driver: "nvidia"
-                    count: "all"
-                    capabilities: ["gpu"]
+        reservations:
+          devices:
+            - driver: "nvidia"
+              count: "all"
+              capabilities: [ "gpu" ]
   mcp-server_text:
     profiles:
       - text
@@ -48,14 +41,7 @@ services:
     volumes:
       - ..:/geniesim
       - ./server_chromadb:/tmp/chromadb_cache:rw
-    command:
-      [
-        "mcpo",
-        "--config",
-        "/geniesim/generator/server/mcp_config.json",
-        "--port",
-        "8765",
-      ]
+    command: [ "mcpo", "--config", "/geniesim/generator/server/mcp_config.json", "--port", "8765" ]
     working_dir: /geniesim
     restart: unless-stopped
   open-webui:

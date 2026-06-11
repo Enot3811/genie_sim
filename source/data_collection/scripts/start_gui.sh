@@ -39,6 +39,11 @@ if [ "$ACTION" == "run" ]; then
     set -eo pipefail
 
     echo "using SIM_REPO_ROOT='$CURRENT_DIR'"
+    
+    if [ -f "$CURRENT_DIR/.env" ]; then
+        source "$CURRENT_DIR/.env"
+    fi
+
     if [ -z "$SIM_ASSETS" ]; then
         echo "You need to set \$SIM_ASSETS eg. SIM_ASSETS=~/assets"
         exit 1
