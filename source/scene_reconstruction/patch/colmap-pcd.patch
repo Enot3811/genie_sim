@@ -79,7 +79,7 @@ index d282db6..d5555e6 100644
  set(COLMAP_VERSION_NUMBER "3800")
  
 -set(CMAKE_CUDA_ARCHITECTURES "all-major")
-+set(CMAKE_CUDA_COMPILER /usr/local/cuda-11.8/bin/nvcc)
++set(CMAKE_CUDA_COMPILER /usr/local/cuda/bin/nvcc)
 +set(CMAKE_CUDA_ARCHITECTURES "89-virtual")
  
  ################################################################################

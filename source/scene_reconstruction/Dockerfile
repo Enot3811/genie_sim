@@ -1,5 +1,5 @@
 ARG CUDA_IMAGE="12.4.1-cudnn-devel-ubuntu22.04"
-FROM nvidia/cuda:${CUDA_IMAGE} as system-builder
+FROM nvidia/cuda:${CUDA_IMAGE} AS system-builder
 
 ARG TORCH_ARCH="8.9+PTX"
 ARG PT_CU_VER="cu124"
@@ -74,7 +74,7 @@ COPY . .
 RUN git clone https://github.com/CloudCompare/CloudCompare.git
 RUN cd CloudCompare && git checkout v2.13.2 && git submodule update --init --recursive && \
     mkdir build && cd build && \
-    cmake .. -DCMAKE_BUILD_TYPE=Rlease -DPLUGIN_STANDARD_QPCL=ON \
+    cmake .. -DCMAKE_BUILD_TYPE=Release -DPLUGIN_STANDARD_QPCL=ON \
     -DPLUGIN_IO_QLAS=ON -DPLUGIN_IO_QCORE=ON -DPLUGIN_IO_QPDAL=ON && \
     make -j$(nproc -1) && make install && cd ../.. &&  rm -rf CloudCompare
 
@@ -84,8 +84,8 @@ RUN cd colmap-pcd && git checkout 9cd7d9b7f257306483dc6ecc95d4ef447335888d && gi
      && mkdir build && cd build && cmake .. && make -j$(nproc -1) && make install && cd ../.. && rm -rf colmap-pcd
 
 # Install conda env
-ENV CONDA_DIR /opt/conda
-ENV PATH $CONDA_DIR/bin:$PATH
+ENV CONDA_DIR=/opt/conda
+ENV PATH=$CONDA_DIR/bin:$PATH
 
 RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-py312_24.9.2-0-Linux-x86_64.sh -O ~/miniconda.sh && \
     /bin/bash ~/miniconda.sh -b -p /opt/conda && \
@@ -100,7 +100,7 @@ RUN conda config --set auto_activate_base false && \
 
 RUN conda --version && python --version
 
-FROM system-builder as pgsr-builder
+FROM system-builder AS pgsr-builder
 # Install PGSR enviroments
 RUN cd ./third_party && git clone https://github.com/zju3dv/PGSR.git && cd PGSR && \
     git checkout de24f1a38b350387e8d8fe381b2cd70c1ae946e7 && \
@@ -120,7 +120,7 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     conda run -n pgsr pip install submodules/diff-plane-rasterization && \
     conda run -n pgsr pip install submodules/simple-knn rich laspy
 
-FROM pgsr-builder as difix-builder
+FROM pgsr-builder AS difix-builder
 # install Difix3d
 RUN conda create -n difix python=3.8 -y
 
@@ -134,7 +134,7 @@ RUN --mount=type=cache,target=/root/.cache/pip \
 RUN --mount=type=cache,target=/root/.cache/pip \
     conda run -n difix pip3 install matplotlib scikit-learn plyfile rich
 
-FROM difix-builder as gsplat-builder
+FROM difix-builder AS gsplat-builder
 # gsplat install
 RUN conda create -n gsplat python=3.8 -y
 
@@ -155,7 +155,7 @@ RUN cd ./third_party && git clone https://github.com/cvg/Hierarchical-Localizati
     git submodule update --init --recursive && \
     git apply ../../patch/hloc.patch
 
-ENV PYTHONPATH=/root/third_party/Hierarchical-Localization:$PYTHONPATH
+ENV PYTHONPATH="/root/third_party/Hierarchical-Localization:${PYTHONPATH}"
 RUN --mount=type=cache,target=/root/.cache/pip \
     cd /root/third_party/Hierarchical-Localization && \
     /opt/conda/envs/pgsr/bin/python -m pip install -r requirements.txt && \
