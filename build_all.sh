@@ -57,6 +57,21 @@ else
 fi
 
 echo "========================================"
+echo "4. Building data_collection container"
+echo "========================================"
+cd "$WORKSPACE_DIR/source/data_collection"
+IMAGE_4="registry.agibot.com/genie-sim/open_source-data-collection:latest"
+if docker image inspect "$IMAGE_4" >/dev/null 2>&1; then
+    echo "Image $IMAGE_4 already exists. Skipping build."
+else
+    if docker build -f ./dockerfile -t "$IMAGE_4" .; then
+        echo "data_collection container built successfully!"
+    else
+        echo "ERROR: Failed to build data_collection container."
+    fi
+fi
+
+echo "========================================"
 echo "Build script execution finished!"
 echo "Check $LOG_FILE for details."
 echo "========================================"
