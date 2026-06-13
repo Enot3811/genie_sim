@@ -1,12 +1,14 @@
-# syntax=docker/dockerfile:1
-# Real2Sim Environment Asset Flow Dockerfile
-FROM nvidia/cuda:11.8.0-cudnn8-devel-ubuntu22.04 as system-builder
+ARG CUDA_IMAGE="12.4.1-cudnn-devel-ubuntu22.04"
+FROM nvidia/cuda:${CUDA_IMAGE} as system-builder
+
+ARG TORCH_ARCH="8.9+PTX"
+ARG PT_CU_VER="cu124"
 
 ENV ACCEPT_EULA=Y
 ENV PRIVACY_CONSENT=Y
 ENV DEBIAN_FRONTEND=noninteractive
 ENV CONDA_ALWAYS_YES=true
-ENV TORCH_CUDA_ARCH_LIST="8.9"
+ENV TORCH_CUDA_ARCH_LIST=${TORCH_ARCH}
 ENV MAX_JOBS=4
 ENV QT_QPA_PLATFORM=offscreen
 
@@ -108,7 +110,7 @@ RUN cd ./third_party && git clone https://github.com/zju3dv/PGSR.git && cd PGSR 
     conda create -n pgsr python=3.8 -y
 
 RUN --mount=type=cache,target=/root/.cache/pip \
-    conda run -n pgsr pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
+    conda run -n pgsr pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/${PT_CU_VER}
 
 RUN --mount=type=cache,target=/root/.cache/pip \
     cd ./third_party/PGSR && conda run -n pgsr pip install -r requirements.txt
@@ -123,7 +125,7 @@ FROM pgsr-builder as difix-builder
 RUN conda create -n difix python=3.8 -y
 
 RUN --mount=type=cache,target=/root/.cache/pip \
-    conda run -n difix pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
+    conda run -n difix pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/${PT_CU_VER}
 
 RUN --mount=type=cache,target=/root/.cache/pip \
     cd ./third_party && git clone https://github.com/nv-tlabs/Difix3D.git && \
@@ -140,7 +142,7 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     conda run -n gsplat python3 -m pip install plyfile
 
 RUN --mount=type=cache,target=/root/.cache/pip \
-    conda run -n gsplat python3 -m pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
+    conda run -n gsplat python3 -m pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/${PT_CU_VER}
 
 RUN --mount=type=cache,target=/root/.cache/pip \
     cd ./third_party/gsplat && conda run -n gsplat pip3 uninstall pycolmap -y || true && \

@@ -44,11 +44,10 @@ echo "========================================"
 echo "3. Building scene_reconstruction container"
 echo "========================================"
 cd "$WORKSPACE_DIR/source/scene_reconstruction"
-IMAGE_3="registry.agibot.com/real2sim/cuda:11.8.0-cudnn8-devel-ubuntu22.04-benchmark"
+IMAGE_3="registry.agibot.com/real2sim/cuda:12.4.1-cudnn-devel-ubuntu22.04-benchmark"
 if docker image inspect "$IMAGE_3" >/dev/null 2>&1; then
     echo "Image $IMAGE_3 already exists. Skipping build."
 else
-    # Тег взят из команды docker run в гайде
     if docker build . -t "$IMAGE_3"; then
         echo "scene_reconstruction container built successfully!"
     else

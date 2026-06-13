@@ -1,9 +1,17 @@
 #!/bin/bash
 
+set -e
+
 OUTPUT_NAME="gs-output"
 GS_ASSET='gs-asset'
 INPUT_PATH=$1
 NVS_FLAG=$2
+
+mkdir -p /logs
+LOG_FILE="/logs/reconstruction_$(date +%Y%m%d_%H%M%S).log"
+echo "Starting Real2Sim. All output will be logged to $LOG_FILE"
+exec > >(tee -a "$LOG_FILE") 2>&1
+
 echo "Input path for Real2Sim: $INPUT_PATH"
 
 # Is path exist
