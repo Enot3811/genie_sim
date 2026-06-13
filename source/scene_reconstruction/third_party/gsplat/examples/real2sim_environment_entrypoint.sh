@@ -35,7 +35,7 @@ echo "Running Real2Sim processing on: $INPUT_PATH"
 
 python3 batch_rec.py --path "$INPUT_PATH/"
 
-conda activate base
+conda activate gsplat
 
 python3 simple_trainer_agi.py default \
     --data_dir "$INPUT_PATH/" \

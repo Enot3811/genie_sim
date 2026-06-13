@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1
 # Real2Sim Environment Asset Flow Dockerfile
 FROM nvidia/cuda:11.8.0-cudnn8-devel-ubuntu22.04 as system-builder
 
@@ -104,29 +105,47 @@ RUN cd ./third_party && git clone https://github.com/zju3dv/PGSR.git && cd PGSR 
     git apply ../../patch/pgsr.patch && \
     git submodule update --init --recursive && \
     conda init && \
-    conda create -n pgsr python=3.8 -y &&  rm -rf /root/.cache/pip
-RUN conda run -n pgsr pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118 && \
-    rm -rf /root/.cache/pip
-RUN cd ./third_party/PGSR && conda run -n pgsr pip install -r requirements.txt && rm -rf /root/.cache/pip
-RUN cd ./third_party/PGSR &&  conda run -n pgsr pip install pycolmap==3.11.1 && \
+    conda create -n pgsr python=3.8 -y
+
+RUN --mount=type=cache,target=/root/.cache/pip \
+    conda run -n pgsr pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
+
+RUN --mount=type=cache,target=/root/.cache/pip \
+    cd ./third_party/PGSR && conda run -n pgsr pip install -r requirements.txt
+
+RUN --mount=type=cache,target=/root/.cache/pip \
+    cd ./third_party/PGSR && conda run -n pgsr pip install pycolmap==3.11.1 && \
     conda run -n pgsr pip install submodules/diff-plane-rasterization && \
-    conda run -n pgsr pip install submodules/simple-knn rich laspy \
-    && rm -rf /root/.cache/pip
+    conda run -n pgsr pip install submodules/simple-knn rich laspy
 
 FROM pgsr-builder as difix-builder
 # install Difix3d
-RUN conda create -n difix python=3.8 -y  && rm -rf /root/.cache/pip
-RUN cd ./third_party && git clone https://github.com/nv-tlabs/Difix3D.git && \
-    conda run -n difix pip3 install -r Difix3D/requirements.txt && rm -rf /root/.cache/pip
-RUN conda run -n difix pip3 install matplotlib scikit-learn plyfile rich && rm -rf /root/.cache/pip
+RUN conda create -n difix python=3.8 -y
+
+RUN --mount=type=cache,target=/root/.cache/pip \
+    conda run -n difix pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
+
+RUN --mount=type=cache,target=/root/.cache/pip \
+    cd ./third_party && git clone https://github.com/nv-tlabs/Difix3D.git && \
+    conda run -n difix pip3 install -r Difix3D/requirements.txt
+
+RUN --mount=type=cache,target=/root/.cache/pip \
+    conda run -n difix pip3 install matplotlib scikit-learn plyfile rich
 
 FROM difix-builder as gsplat-builder
-# base install gsplat
-RUN conda run -n base python3 -m pip install plyfile torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118 \
-    && rm -rf /root/.cache/pip
-RUN cd ./third_party/gsplat && conda run -n base pip3 uninstall pycolmap && \
-    conda run -n base pip3 install -r examples/requirements.txt && \
-    conda run -n base python -m pip install . && rm -rf /root/.cache/pip
+# gsplat install
+RUN conda create -n gsplat python=3.8 -y
+
+RUN --mount=type=cache,target=/root/.cache/pip \
+    conda run -n gsplat python3 -m pip install plyfile
+
+RUN --mount=type=cache,target=/root/.cache/pip \
+    conda run -n gsplat python3 -m pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
+
+RUN --mount=type=cache,target=/root/.cache/pip \
+    cd ./third_party/gsplat && conda run -n gsplat pip3 uninstall pycolmap -y || true && \
+    conda run -n gsplat pip3 install -r examples/requirements.txt && \
+    conda run -n gsplat python -m pip install .
 
 RUN cd ./third_party && git clone https://github.com/cvg/Hierarchical-Localization/  && \
     cd Hierarchical-Localization && \
@@ -135,12 +154,11 @@ RUN cd ./third_party && git clone https://github.com/cvg/Hierarchical-Localizati
     git apply ../../patch/hloc.patch
 
 ENV PYTHONPATH=/root/third_party/Hierarchical-Localization:$PYTHONPATH
-RUN cd /root/third_party/Hierarchical-Localization && \
+RUN --mount=type=cache,target=/root/.cache/pip \
+    cd /root/third_party/Hierarchical-Localization && \
     /opt/conda/envs/pgsr/bin/python -m pip install -r requirements.txt && \
-    /opt/conda/envs/pgsr/bin/python -m pip install e . && \
-    rm -rf /root/.cache/pip
+    /opt/conda/envs/pgsr/bin/python -m pip install -e .
 
-RUN rm -rf /root/.cache/pip
 RUN rm -rf /var/lib/apt/lists/*
 
 CMD ["/bin/bash"]
