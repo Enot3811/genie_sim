@@ -74,6 +74,8 @@ class Args:
     policy: Checkpoint | Default = dataclasses.field(default_factory=Default)
 
 
+CHECKPOINT_BASE = os.environ.get("OPENPI_DATA_HOME", "./checkpoints")
+
 # Default checkpoints that should be used for each environment.
 DEFAULT_CHECKPOINT: dict[EnvMode, Checkpoint] = {
     EnvMode.ALOHA: Checkpoint(
@@ -90,51 +92,51 @@ DEFAULT_CHECKPOINT: dict[EnvMode, Checkpoint] = {
     ),
     EnvMode.LIBERO: Checkpoint(
         config="acot_libero_action_cot_explicit_implicit_co_fusion",
-        dir="./checkpoints/acot_libero_action_cot_explicit_implicit_co_fusion/exp_name/40000",
+        dir=f"{CHECKPOINT_BASE}/acot_libero_action_cot_explicit_implicit_co_fusion/exp_name/40000",
     ),
     EnvMode.LIBEROPLUS: Checkpoint(
         config="acot_libero_plus_action_cot_explicit_implicit_co_fusion",
-        dir="./checkpoints/acot_libero_plus_action_cot_explicit_implicit_co_fusion/exp_name/100000",
+        dir=f"{CHECKPOINT_BASE}/acot_libero_plus_action_cot_explicit_implicit_co_fusion/exp_name/100000",
     ),
     EnvMode.VLABENCH: Checkpoint(
         config="acot_vlabench_action_cot_explicit_implicit_co_fusion",
-        dir="./checkpoints/acot_vlabench_action_cot_explicit_implicit_co_fusion/exp_name/60000",
+        dir=f"{CHECKPOINT_BASE}/acot_vlabench_action_cot_explicit_implicit_co_fusion/exp_name/60000",
     ),
     EnvMode.G2SIM: Checkpoint(
         config="acot_icra_simulation_challenge_reasoning_to_action",
-        dir="./checkpoints/acot_icra_simulation_challenge_reasoning_to_action/exp_name/30000",
+        dir=f"{CHECKPOINT_BASE}/acot_icra_simulation_challenge_reasoning_to_action/exp_name/30000",
     ),
     EnvMode.S2R_SELECT_COLOR: Checkpoint(
         config="s2r_select_color",
-        dir="./checkpoints/select_color/",
+        dir=f"{CHECKPOINT_BASE}/select_color/",
     ),
     EnvMode.S2R_SIZE_RECOGNIZE: Checkpoint(
         config="s2r_size_recognize",
-        dir="./checkpoints/size_recognize/",
+        dir=f"{CHECKPOINT_BASE}/size_recognize/",
     ),
     EnvMode.S2R_GRASP_TARGETS: Checkpoint(
         config="s2r_grasp_targets",
-        dir="./checkpoints/grasp_targets/",
+        dir=f"{CHECKPOINT_BASE}/grasp_targets/",
     ),
     EnvMode.S2R_ORGANIZE_ITEMS: Checkpoint(
         config="s2r_organize_items",
-        dir="./checkpoints/organize_items/",
+        dir=f"{CHECKPOINT_BASE}/organize_items/",
     ),
     EnvMode.S2R_SORT_FRUIT: Checkpoint(
         config="s2r_sort_fruit",
-        dir="./checkpoints/sort_fruit/",
+        dir=f"{CHECKPOINT_BASE}/sort_fruit/",
     ),
     EnvMode.S2R_PACK_IN_SUPERMARKET: Checkpoint(
         config="s2r_pack_in_supermarket",
-        dir="./checkpoints/pack_in_supermarket/",
+        dir=f"{CHECKPOINT_BASE}/pack_in_supermarket/",
     ),
     EnvMode.S2R_BIMANUAL_CHIP_HANDOVER: Checkpoint(
         config="s2r_bimanual_chip_handover",
-        dir="./checkpoints/bimanual_chip_handover/",
+        dir=f"{CHECKPOINT_BASE}/bimanual_chip_handover/",
     ),
     EnvMode.S2R_PLACE_BLOCK_INTO_DRAWER: Checkpoint(
         config="s2r_place_block_into_drawer",
-        dir="./checkpoints/place_block_into_drawer/",
+        dir=f"{CHECKPOINT_BASE}/place_block_into_drawer/",
     ),
 }
 

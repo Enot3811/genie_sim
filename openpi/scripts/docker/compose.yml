@@ -14,6 +14,8 @@ services:
     init: true
     tty: true
     network_mode: host
+    env_file:
+      - ../../../.env
     # Populate configured openpi data home to /openpi_assets inside the container.
     # Populate aws credential inside the container.
     volumes:

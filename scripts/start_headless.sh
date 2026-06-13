@@ -13,6 +13,7 @@ mkdir -p ~/docker/isaac-sim/data/Kit
 mkdir -p ~/docker/isaac-sim/logs
 mkdir -p ~/docker/isaac-sim/pkg
 mkdir -p $CURRENT_DIR/source/geniesim/benchmark/saved_task
+mkdir -p $CURRENT_DIR/output/logs
 sudo chown -R 1234:1234 ~/docker/isaac-sim
 
 docker run -it --name genie_sim_benchmark \

@@ -13,7 +13,8 @@ from torchvision.transforms.functional import to_pil_image
 from PIL import Image
 
 config = _config.get_config("acot_icra_simulation_challenge_reasoning_to_action")
-checkpoint_dir = "./checkpoints/acot_icra_simulation_challenge_reasoning_to_action/exp_name/30000"
+CHECKPOINT_BASE = os.environ.get("OPENPI_DATA_HOME", "./checkpoints")
+checkpoint_dir = f"{CHECKPOINT_BASE}/acot_icra_simulation_challenge_reasoning_to_action/exp_name/30000"
 
 # Create a trained policy.
 policy = _policy_config.create_trained_policy(config, checkpoint_dir)

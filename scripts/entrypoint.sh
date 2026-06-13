@@ -13,6 +13,7 @@ sudo setfacl -m u:1234:rwX /geniesim/main/source/geniesim/benchmark/saved_task
 sudo setfacl -m u:1234:rwX /geniesim/main/source/teleop
 sudo setfacl -m u:1234:rwX /geniesim/main/source/teleop/app/bin
 sudo setfacl -m u:1234:rwX /geniesim/main/source/teleop/app/share
+sudo setfacl -R -m u:1234:rwX /geniesim/main/output
 sudo mkdir -p /geniesim/main/source/teleop/app/bin/.cache
 sudo mkdir -p /geniesim/main/source/teleop/app/bin/logs
 sudo mkdir -p /geniesim/main/source/teleop/app/bin/logs/dylog
