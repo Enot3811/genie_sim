@@ -1,0 +1,7 @@
+Dockerfile
+.dockerignore
+.git
+build_containers_*.log
+*.log
+__pycache__/
+*.pyc

@@ -1,8 +1,85 @@
-ARG CUDA_IMAGE="12.4.1-cudnn-devel-ubuntu22.04"
+ARG CUDA_IMAGE="12.8.0-cudnn-devel-ubuntu22.04"
+ARG COLMAP_CUDA_IMAGE="11.8.0-cudnn8-devel-ubuntu22.04"
+
+FROM nvidia/cuda:${COLMAP_CUDA_IMAGE} AS colmap-builder
+
+ENV ACCEPT_EULA=Y
+ENV PRIVACY_CONSENT=Y
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    libboost-program-options-dev \
+    libboost-filesystem-dev \
+    libboost-graph-dev \
+    libboost-system-dev \
+    libboost-test-dev \
+    libeigen3-dev \
+    libsuitesparse-dev \
+    libfreeimage-dev \
+    libmetis-dev \
+    libgoogle-glog-dev \
+    libgflags-dev \
+    libglew-dev \
+    libgmock-dev \
+    qtbase5-dev \
+    libqt5opengl5-dev \
+    libcgal-dev \
+    libcgal-qt5-dev \
+    libpdal-dev \
+    pdal \
+    libatlas-base-dev \
+    libflann-dev \
+    libboost-all-dev \
+    libopencv-dev \
+    libgtest-dev \
+    libsqlite3-dev \
+    libglm-dev \
+    libceres-dev \
+    libcurl4-openssl-dev \
+    libmkl-full-dev \
+    liblaszip-dev \
+    python3-pip \
+    wget \
+    bzip2 \
+    ca-certificates \
+    curl \
+    git \
+    libpcl-dev \
+    pcl-tools \
+    qttools5-dev \
+    qttools5-dev-tools \
+    flatpak \
+    ssh \
+    cmake \
+    xvfb  \
+    libfreetype6-dev \
+    libpng-dev \
+    libjpeg-dev \
+    libtiff-dev \
+    libgif-dev \
+    libwebp-dev \
+    zlib1g-dev \
+    libxft-dev \
+    pkg-config && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /root
+COPY . .
+
+# Build the legacy COLMAP fork with CUDA 11.8. CUDA 12 removed the texture
+# reference API used by PBA/SiftGPU in this codebase.
+RUN git clone https://github.com/XiaoBaiiiiii/colmap-pcd.git
+RUN cd colmap-pcd && git checkout 9cd7d9b7f257306483dc6ecc95d4ef447335888d && git apply ../patch/colmap-pcd.patch \
+     && mkdir build && cd build && cmake .. -DCMAKE_INSTALL_PREFIX=/opt/colmap-pcd && make -j$(nproc) && make install && cd ../.. && rm -rf colmap-pcd
+
+RUN mkdir -p /opt/colmap-pcd/cuda-11.8/lib64 && \
+    cp -a /usr/local/cuda/targets/x86_64-linux/lib/libcudart.so* /opt/colmap-pcd/cuda-11.8/lib64/ && \
+    cp -a /usr/local/cuda/targets/x86_64-linux/lib/libcurand.so* /opt/colmap-pcd/cuda-11.8/lib64/
+
 FROM nvidia/cuda:${CUDA_IMAGE} AS system-builder
 
-ARG TORCH_ARCH="8.9+PTX"
-ARG PT_CU_VER="cu124"
+ARG TORCH_ARCH="12.0"
+ARG PT_CU_VER="cu128"
 
 ENV ACCEPT_EULA=Y
 ENV PRIVACY_CONSENT=Y
@@ -76,12 +153,15 @@ RUN cd CloudCompare && git checkout v2.13.2 && git submodule update --init --rec
     mkdir build && cd build && \
     cmake .. -DCMAKE_BUILD_TYPE=Release -DPLUGIN_STANDARD_QPCL=ON \
     -DPLUGIN_IO_QLAS=ON -DPLUGIN_IO_QCORE=ON -DPLUGIN_IO_QPDAL=ON && \
-    make -j$(nproc -1) && make install && cd ../.. &&  rm -rf CloudCompare
+    make -j$(nproc) && make install && cd ../.. &&  rm -rf CloudCompare
 
-# Install colmap-pcd
-RUN git clone https://github.com/XiaoBaiiiiii/colmap-pcd.git
-RUN cd colmap-pcd && git checkout 9cd7d9b7f257306483dc6ecc95d4ef447335888d && git apply ../patch/colmap-pcd.patch \
-     && mkdir build && cd build && cmake .. && make -j$(nproc -1) && make install && cd ../.. && rm -rf colmap-pcd
+# Install colmap-pcd built against CUDA 11.8 and keep its CUDA runtime scoped.
+COPY --from=colmap-builder /opt/colmap-pcd /opt/colmap-pcd
+RUN printf '%s\n' \
+    '#!/bin/sh' \
+    'export LD_LIBRARY_PATH="/opt/colmap-pcd/cuda-11.8/lib64:${LD_LIBRARY_PATH}"' \
+    'exec /opt/colmap-pcd/bin/colmap-pcd "$@"' \
+    > /usr/local/bin/colmap-pcd && chmod +x /usr/local/bin/colmap-pcd
 
 # Install conda env
 ENV CONDA_DIR=/opt/conda
@@ -107,22 +187,24 @@ RUN cd ./third_party && git clone https://github.com/zju3dv/PGSR.git && cd PGSR 
     git apply ../../patch/pgsr.patch && \
     git submodule update --init --recursive && \
     conda init && \
-    conda create -n pgsr python=3.8 -y
+    conda create -n pgsr python=3.9 -y
 
 RUN --mount=type=cache,target=/root/.cache/pip \
     conda run -n pgsr pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/${PT_CU_VER}
 
 RUN --mount=type=cache,target=/root/.cache/pip \
-    cd ./third_party/PGSR && conda run -n pgsr pip install -r requirements.txt
+    cd ./third_party/PGSR && grep -v '^pytorch3d$' requirements.txt > /tmp/pgsr-requirements.txt && \
+    conda run -n pgsr pip install -r /tmp/pgsr-requirements.txt
 
 RUN --mount=type=cache,target=/root/.cache/pip \
-    cd ./third_party/PGSR && conda run -n pgsr pip install pycolmap==3.11.1 && \
-    conda run -n pgsr pip install submodules/diff-plane-rasterization && \
-    conda run -n pgsr pip install submodules/simple-knn rich laspy
+    cd ./third_party/PGSR && git apply ../../patch/simple-knn.patch && \
+    conda run -n pgsr pip install pycolmap==3.11.1 && \
+    conda run -n pgsr pip install --no-build-isolation submodules/diff-plane-rasterization && \
+    conda run -n pgsr pip install --no-build-isolation submodules/simple-knn rich laspy
 
 FROM pgsr-builder AS difix-builder
 # install Difix3d
-RUN conda create -n difix python=3.8 -y
+RUN conda create -n difix python=3.9 -y
 
 RUN --mount=type=cache,target=/root/.cache/pip \
     conda run -n difix pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/${PT_CU_VER}
@@ -136,7 +218,7 @@ RUN --mount=type=cache,target=/root/.cache/pip \
 
 FROM difix-builder AS gsplat-builder
 # gsplat install
-RUN conda create -n gsplat python=3.8 -y
+RUN conda create -n gsplat python=3.9 -y
 
 RUN --mount=type=cache,target=/root/.cache/pip \
     conda run -n gsplat python3 -m pip install plyfile
@@ -146,8 +228,8 @@ RUN --mount=type=cache,target=/root/.cache/pip \
 
 RUN --mount=type=cache,target=/root/.cache/pip \
     cd ./third_party/gsplat && conda run -n gsplat pip3 uninstall pycolmap -y || true && \
-    conda run -n gsplat pip3 install -r examples/requirements.txt && \
-    conda run -n gsplat python -m pip install .
+    conda run -n gsplat pip3 install --no-build-isolation -r examples/requirements.txt && \
+    conda run -n gsplat python -m pip install --no-build-isolation .
 
 RUN cd ./third_party && git clone https://github.com/cvg/Hierarchical-Localization/  && \
     cd Hierarchical-Localization && \
@@ -155,7 +237,7 @@ RUN cd ./third_party && git clone https://github.com/cvg/Hierarchical-Localizati
     git submodule update --init --recursive && \
     git apply ../../patch/hloc.patch
 
-ENV PYTHONPATH="/root/third_party/Hierarchical-Localization:${PYTHONPATH}"
+ENV PYTHONPATH="/root/third_party/Hierarchical-Localization"
 RUN --mount=type=cache,target=/root/.cache/pip \
     cd /root/third_party/Hierarchical-Localization && \
     /opt/conda/envs/pgsr/bin/python -m pip install -r requirements.txt && \

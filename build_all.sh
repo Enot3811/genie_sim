@@ -43,12 +43,24 @@ fi
 echo "========================================"
 echo "3. Building scene_reconstruction container"
 echo "========================================"
-cd "$WORKSPACE_DIR/source/scene_reconstruction"
-IMAGE_3="registry.agibot.com/real2sim/cuda:12.4.1-cudnn-devel-ubuntu22.04-benchmark"
-if docker image inspect "$IMAGE_3" >/dev/null 2>&1; then
+# Multi-stage Dockerfile:
+#   colmap-builder  — CUDA 11.8 (legacy colmap-pcd)
+#   gsplat-builder  — CUDA 12.8 + cu128 PyTorch (final image, RTX 50xx)
+# Set FORCE_REBUILD=1 to rebuild after Dockerfile/patch changes (e.g. tool.py).
+SCENE_RECON_DIR="$WORKSPACE_DIR/source/scene_reconstruction"
+IMAGE_3="registry.agibot.com/real2sim/cuda:12.8.0-cudnn-devel-ubuntu22.04-benchmark"
+FORCE_REBUILD="${FORCE_REBUILD:-0}"
+
+cd "$SCENE_RECON_DIR"
+if docker image inspect "$IMAGE_3" >/dev/null 2>&1 && [ "$FORCE_REBUILD" != "1" ]; then
     echo "Image $IMAGE_3 already exists. Skipping build."
+    echo "  To rebuild after changes: FORCE_REBUILD=1 ./build_all.sh"
 else
-    if docker build . -t "$IMAGE_3"; then
+    if [ "$FORCE_REBUILD" = "1" ]; then
+        echo "FORCE_REBUILD=1: removing existing image (if any) and rebuilding."
+        docker rmi "$IMAGE_3" 2>/dev/null || true
+    fi
+    if docker build --target gsplat-builder -t "$IMAGE_3" .; then
         echo "scene_reconstruction container built successfully!"
     else
         echo "ERROR: Failed to build scene_reconstruction container."
