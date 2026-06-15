@@ -43,6 +43,8 @@ if embedding_mode == "vl":
     db = AssetVectorDBVL(config=config)
 else:
     config = json.load(open(f"{CURRENT_DIRECTORY}/mcp_text_embedding/text_embedding_config.json"))
+    if not config.get("api_key"):
+        config["api_key"] = os.getenv("API_KEY", "")
     db = AssetVectorDB(config=config)
 
 

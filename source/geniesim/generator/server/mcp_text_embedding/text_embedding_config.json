@@ -1,7 +1,7 @@
 {
   "api_key": "",
-  "base_url": "https://dashscope.aliyuncs.com/compatible-mode/v1",
-  "dashscope_mode": true,
-  "dimension": 2048,
-  "model": "text-embedding-v4"
+  "base_url": "https://openrouter.ai/api/v1",
+  "dashscope_mode": false,
+  "dimension": 4096,
+  "model": "qwen/qwen3-embedding-8b"
 }
