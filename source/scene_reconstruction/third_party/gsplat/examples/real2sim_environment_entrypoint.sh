@@ -20,6 +20,66 @@ if [ ! -d "$INPUT_PATH" ]; then
     exit 1
 fi
 
+# Outputs from previous Real2Sim runs (under INPUT_PATH).
+PREVIOUS_OUTPUTS=(
+    colmap
+    gs-asset
+    gs-output
+    images
+    novel
+    sparse
+    sparse-gba
+    normal_subsample.ply
+)
+
+maybe_clean_previous_outputs() {
+    local base="$1"
+    local existing=()
+
+    for item in "${PREVIOUS_OUTPUTS[@]}"; do
+        if [ -e "${base}/${item}" ]; then
+            existing+=("$item")
+        fi
+    done
+
+    if [ "${#existing[@]}" -eq 0 ]; then
+        echo "No previous Real2Sim outputs found under ${base}."
+        return 0
+    fi
+
+    echo "Found outputs from previous run(s):"
+    for item in "${existing[@]}"; do
+        echo "  - ${base}/${item}"
+    done
+
+    if [ "${REAL2SIM_SKIP_CLEAN:-0}" = "1" ]; then
+        echo "REAL2SIM_SKIP_CLEAN=1: keeping existing outputs."
+        return 0
+    fi
+
+    local reply=""
+    if [ "${REAL2SIM_AUTO_CLEAN:-0}" = "1" ]; then
+        reply="y"
+        echo "REAL2SIM_AUTO_CLEAN=1: deleting previous outputs without prompt."
+    else
+        read -r -p "Delete these before starting? [y/N] " reply </dev/tty
+    fi
+
+    case "$reply" in
+        y|Y|yes|YES)
+            for item in "${existing[@]}"; do
+                rm -rf "${base}/${item}"
+            done
+            echo "Removed previous outputs."
+            ;;
+        *)
+            echo "Keeping existing outputs. The run may fail if stale files conflict."
+            ;;
+    esac
+}
+
+maybe_clean_previous_outputs "$INPUT_PATH"
+
 cd /root/third_party/gsplat/examples
 
 # activate conda env

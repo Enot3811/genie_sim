@@ -316,7 +316,7 @@ def Train(path, args):
         GenColmapDataFormat(path)
     except Exception as e:
         logging.info(f"generate colmap error: {e}")
-        exit()
+        sys.exit(1)
 
     # compute point cloud normal and subsample
     point_data_preprocess(path)
