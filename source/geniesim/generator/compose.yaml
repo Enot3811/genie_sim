@@ -8,12 +8,16 @@ services:
     container_name: assets-retrieval-agent_vl
     ports:
       - "8765:8765"
+    env_file:
+      - ../../../.env
     volumes:
       - ..:/geniesim
+      - ${SIM_ASSETS}:/geniesim/assets:rw
       - ./server_chromadb_vl:/tmp/chromadb_cache_vl:rw
     command: [ "mcpo", "--config", "/geniesim/generator/server/mcp_config.json", "--port", "8765" ]
     working_dir: /geniesim
     environment:
+      - SIM_ASSETS=/geniesim/assets
       - EMBEDDING_MODE=vl
       - VL_EMBEDDING_MODEL=Qwen3-VL-Embedding-2B
       - PERMANENT_MODEL_IN_GPU=False
@@ -39,10 +43,12 @@ services:
     env_file:
       - ../../../.env
     environment:
+      - SIM_ASSETS=/geniesim/assets
       - EMBEDDING_MODE=text
       - API_KEY=${API_KEY:-}
     volumes:
       - ..:/geniesim
+      - ${SIM_ASSETS}:/geniesim/assets:rw
       - ./server_chromadb:/tmp/chromadb_cache:rw
     command: [ "mcpo", "--config", "/geniesim/generator/server/mcp_config.json", "--port", "8765" ]
     working_dir: /geniesim

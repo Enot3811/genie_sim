@@ -18,13 +18,29 @@ EOF
     exit 1
 fi
 
-# OPENAI_API_BASE_URL OPENAI_API_KEY
-# for var in SIM_ASSETS ; do
-#     if [[ -z "${!var:-}" ]]; then
-#         echo "ERROR: You must set the environment variable '$var' before running this script."
-#     fi
-#     echo "using $var='${!var}'"
-# done
+if [ -f "$CURRENT_DIR/.env" ]; then
+    # shellcheck disable=SC1091
+    set -a
+    source "$CURRENT_DIR/.env"
+    set +a
+fi
+
+if [[ -z "${SIM_ASSETS:-}" ]]; then
+    cat <<EOF
+ERROR: SIM_ASSETS is not set. Please define it in the .env file.
+
+Example:
+    SIM_ASSETS="/path/to/GenieSimAssets"
+EOF
+    exit 1
+fi
+
+if [[ ! -d "$SIM_ASSETS" ]]; then
+    echo "ERROR: SIM_ASSETS directory does not exist: $SIM_ASSETS"
+    exit 1
+fi
+
+echo "using SIM_ASSETS='$SIM_ASSETS'"
 
 echo $UID
 # echo $GID
