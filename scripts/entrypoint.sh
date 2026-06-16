@@ -10,6 +10,8 @@ export ISAACSIM_HOME=/isaac-sim
 sudo setfacl -m u:1234:rwX /geniesim/main
 sudo setfacl -m u:1234:rwX /geniesim/main/source
 sudo setfacl -m u:1234:rwX /geniesim/main/source/geniesim/benchmark/saved_task
+sudo setfacl -m u:1234:rwX /geniesim/main/source/geniesim/benchmark/config/llm_task
+sudo setfacl -m u:1000:rwX /geniesim/main/source/geniesim/benchmark/config/llm_task
 sudo setfacl -m u:1234:rwX /geniesim/main/source/teleop
 sudo setfacl -m u:1234:rwX /geniesim/main/source/teleop/app/bin
 sudo setfacl -m u:1234:rwX /geniesim/main/source/teleop/app/share
