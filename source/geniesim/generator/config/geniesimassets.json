@@ -1,7 +1,7 @@
 [
   {
     "access_control": {},
-    "base_model_id": "qwen3-max-2025-09-23",
+    "base_model_id": "google/gemini-3.1-pro-preview",
     "created_at": 1767505747,
     "id": "geniesimassets",
     "is_active": true,
